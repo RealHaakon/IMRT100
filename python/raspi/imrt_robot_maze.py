@@ -6,7 +6,91 @@ import imrt_robot_serial
 import signal
 import time
 import sys
+import random
 
+LEFT = -1
+RIGHT = 1
+FORWARDS = 1
+BACKWARDS = -1
+DRIVING_SPEED = 150
+#TURNING_SPEED = 100
+STOP_MAIN = 15
+STOP_SIDE = 45
+SWING_FULL = 25
+
+LOWER_LIMIT = 25
+HIGHER_LIMIT = 40
+def stop_robot(duration):
+
+    iterations = int(duration * 10)
+    
+    for i in range(iterations):
+        motor_serial.send_command(0, 0)
+        time.sleep(0.10)
+
+
+
+def drive_robot(direction, duration):
+    
+    speed = DRIVING_SPEED * direction
+    iterations = int(duration * 10)
+
+    for i in range(iterations):
+        motor_serial.send_command(speed, speed)
+        time.sleep(0.10)
+        
+def right_turn(direction, duration):
+    
+    speed = DRIVING_SPEED * direction
+    iterations = int(duration * 10)
+
+    for i in range(iterations):
+        motor_serial.send_command(int(speed/2), speed)
+        time.sleep(0.10)        
+
+def full_right(direction, duration):
+    
+    speed = DRIVING_SPEED * direction
+    iterations = int(duration * 10)
+
+    for i in range(iterations):
+        motor_serial.send_command(speed, -speed)
+        time.sleep(0.10)        
+
+
+def left_turn(direction, duration):
+    
+    speed = DRIVING_SPEED * direction
+    iterations = int(duration * 10)
+
+    for i in range(iterations):
+        motor_serial.send_command(speed, int(speed/2))
+        time.sleep(0.10)      
+
+def full_left(direction, duration):
+    
+    speed = DRIVING_SPEED * direction
+    iterations = int(duration * 10)
+
+    for i in range(iterations):
+        motor_serial.send_command(-speed, speed)
+        time.sleep(0.10)      
+        
+
+
+
+"""
+
+def turn_robot_random_angle():
+
+    direction = random.choice([-1,1])
+    iterations = random.randint(10, 25)
+    
+    for i in range(iterations):
+        motor_serial.send_command(TURNING_SPEED * direction, -TURNING_SPEED * direction)
+        time.sleep(0.10)
+
+"""
 
 # We want our program to send commands at 10 Hz (10 commands per second)
 execution_frequency = 10 #Hz
@@ -51,8 +135,7 @@ while not motor_serial.shutdown_now :
     ###############################################################
 
 
-    # Get the current time
-    iteration_start_time = time.time()
+
 
 
 
@@ -61,32 +144,35 @@ while not motor_serial.shutdown_now :
     dist_2 = motor_serial.get_dist_2()
     dist_3 = motor_serial.get_dist_3()
     dist_4 = motor_serial.get_dist_4()
-    print("Dist 1:", dist_1, "   Dist 2:", dist_2, "Dist 3:", dist_3, "Dist 4:", dist_4)
+    print("Dist 1:", dist_1, "   Dist 2:", dist_2, "Dist 3", dist_3 , "Dist 4", dist_4)
 
-    
+    # Check if there is an obstacle in the way
+    #if dist_1 < STOP_MAIN and dist_3 < STOP_SIDE and dist_4 < STOP_SIDE:
+        # There is an obstacle in front of the robot
+        # First let's stop the robot for 1 second
+        #print("Obstacle!")
+        #stop_robot(1)
 
-    # Calculate commands for each motor using sensor readings
-    # In this simple example we will multiply each sensor reading
-    # with a constant to obtain our commands
-    gain = 8
-    speed_motor_1 = dist_1 * gain
-    speed_motor_2 = dist_2 * gain
-
-
-
-    # Send commands to motor
-    # Max speed is 400.
-    # E.g.a command of 500 will result in the same speed as if the command was 400
-    motor_serial.send_command(speed_motor_1, speed_motor_2)
+        # Reverse for 0.5 second
+        #drive_robot(BACKWARDS, 0.5)
 
 
+    if  HIGHER_LIMIT < dist_4:
+    	right_turn(FORWARDS,0.1)	
+    elif LOWER_LIMIT > dist_4:
+    	left_turn(FORWARDS, 0.1)
+    elif dist_1 < STOP_MAIN:
+    	stop_robot(1)    	
+        	
+        
 
-    # Here we pause the execution of the program for the apropriate amout of time
-    # so that our loop executes at the frequency specified by the variable execution_frequency
-    iteration_end_time = time.time() # current time
-    iteration_duration = iteration_end_time - iteration_start_time # time spent executing code
-    if (iteration_duration < execution_period):
-        time.sleep(execution_period - iteration_duration)
+    else:
+        # If there is nothing in front of the robot it continus driving forwards
+        drive_robot(FORWARDS, 0.1)
+
+
+        
+                
 
 
 
